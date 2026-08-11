@@ -20,3 +20,25 @@
 
 \## 项目结构
 
+network-automation/
+
+├── network\_device.py      # 设备连接与操作类（核心封装）
+
+├── backup.py              # 配置备份脚本
+
+├── network\_inspect.py     # 巡检报表脚本
+
+├── config\_push.py         # 配置下发脚本
+
+├── devices.xlsx           # 设备台账
+
+└── README.md              # 项目说明
+
+
+
+\## 运行环境
+
+\- Python 3.8+
+
+\- 依赖库：`netmiko`, `openpyxl`
+
