@@ -1,0 +1,19 @@
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 自动生成的备份文件夹
+backup_*/
+
+# 自动生成的巡检报告
+巡检报告_*.xlsx
+
+# 日志文件
+*.log
+
+# Excel 临时文件
+~$*.xlsx
+
+# 参考资料（PDF等）
+*.pdf
