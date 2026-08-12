@@ -52,7 +52,7 @@ def main():
     devices = read_devices("devices.xlsx")
     
     today = datetime.datetime.now().strftime("%Y%m%d")
-    now = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+    now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     
     # ✅ 新增：独立的 report 文件夹
     folder = f"report_{today}"

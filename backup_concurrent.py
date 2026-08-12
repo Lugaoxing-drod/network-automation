@@ -47,7 +47,7 @@ def backup_single_device(dev_info, folder, now):
 def main():
     devices = read_devices("devices.xlsx")
     today = datetime.datetime.now().strftime("%Y%m%d")
-    now = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+    now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     folder = f"backup_{today}"
     os.makedirs(folder, exist_ok=True)
     

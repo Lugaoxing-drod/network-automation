@@ -22,7 +22,7 @@ def read_devices(excel_file):
 devices = read_devices("devices.xlsx")
 
 today = datetime.datetime.now().strftime("%Y%m%d")
-now = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
 folder = f"report_{today}"
 os.makedirs(folder, exist_ok=True)
