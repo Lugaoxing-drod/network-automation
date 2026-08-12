@@ -21,14 +21,12 @@ def read_devices(excel_file):
 
 devices = read_devices("devices.xlsx")
 
-# ✅ 第 2 处：新增文件夹逻辑（和 backup.py 一样）
 today = datetime.datetime.now().strftime("%Y%m%d")
 now = datetime.datetime.now().strftime("%Y%m%d_%H%M")
 
-folder = f"backup_{today}"             # 和备份用同一个文件夹
+folder = f"report_{today}"
 os.makedirs(folder, exist_ok=True)
 
-# ✅ 第 3 处：报告文件放到文件夹里
 report_file = f"{folder}/巡检报告_{now}.xlsx"
 
 wb = Workbook()
@@ -39,7 +37,7 @@ headers = ['设备IP', '设备类型', '连接状态', 'CPU使用率', '内存�
 ws.append(headers)
 
 print(f">>> 开始巡检，共 {len(devices)} 台设备")
-print(f">>> 报告将保存到: {report_file}")   # ✅ 第 4 处：打印路径
+print(f">>> 报告将保存到: {report_file}")
 
 for dev_info in devices:
     device = NetworkDevice(dev_info)
