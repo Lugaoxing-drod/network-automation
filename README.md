@@ -11,17 +11,19 @@
 - **Excel 驱动设备清单**：改表格不用改代码
 - **文件自动归档**：备份与报告按日期分文件夹存放，避免覆盖
 
-## 项目结构
-network-automation/
-├── network_device.py              # 设备连接与操作类（核心封装）
-├── backup.py                      # 串行备份脚本
-├── backup_concurrent.py           # 并发备份脚本（多线程）
-├── network_inspect.py             # 串行巡检脚本
-├── network_inspect_concurrent.py  # 并发巡检脚本（实时生成报表）
-├── devices.xlsx                   # 设备台账
-├── .gitignore                     # Git 忽略规则
-└── README.md                      # 项目说明
-plain
+项目结构
+```plaintext
+network‑automation/
+├── network_device.py # 设备连接与操作类（核心封装）
+├── backup.py # 串行备份脚本
+├── backup_concurrent.py # 并发备份脚本（多线程）
+├── network_inspect.py # 串行巡检脚本
+├── network_inspect_concurrent.py # 并发巡检脚本（实时生成报表）
+├── devices.xlsx # 设备台账
+├── .gitignore # Git 忽略规则
+└── README.md # 项目说明
+
+```
 
 ## 运行环境
 
