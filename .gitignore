@@ -20,3 +20,6 @@ report_*/
 
 # 参考资料（PDF等）
 *.pdf
+
+# 测试相关
+tests/__pycache__/

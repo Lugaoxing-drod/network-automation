@@ -54,6 +54,26 @@ class NetworkDevice:
     def is_connected(self) -> bool:
         """检查是否已连接"""
         return self.connection is not None
+
+# ========== 通用底层方法（新增）==========
+    def send_command(self, command: str) -> str:
+        if not self.is_connected():
+            return ""
+        try:
+            return self.connection.send_command(command)
+        except Exception as e:
+            print(f"    ✗ 命令执行失败: {e}")
+            return ""
+
+    def send_config(self, commands: list) -> str:
+        if not self.is_connected():
+            return ""
+        try:
+            output = self.connection.send_config_set(commands)
+            return output
+        except Exception as e:
+            print(f"    ✗ 配置下发失败: {e}")
+            return ""
     
     def backup(self, folder: str, timestamp: str) -> bool:
         """
@@ -156,23 +176,3 @@ class NetworkDevice:
                     down_count += 1
         return str(down_count)
     
-    def create_vlan(self, vlan_id: int, vlan_name: str) -> bool:
-        """
-        下发 VLAN 配置
-        """
-        if not self.is_connected():
-            return False
-    
-        try:
-            # Netmiko 自动进入配置模式，下发命令，自动保存
-            commands = [
-                f'vlan {vlan_id}',
-                f'name {vlan_name}',
-            ]
-            self.connection.send_config_set(commands)
-            self.connection.save_config()  # 自动执行 save
-            print(f"    ✓ VLAN {vlan_id} 创建成功")
-            return True
-        except Exception as e:
-            print(f"    ✗ 下发失败: {e}")
-            return False
