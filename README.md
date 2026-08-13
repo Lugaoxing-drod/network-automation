@@ -1,4 +1,3 @@
-```
 # 网络自动化项目 (Network Automation)
 
 基于 Netmiko 的企业级网络设备自动化管理工具。
@@ -15,7 +14,6 @@
 - **安全下发框架**：配置下发前自动备份当前配置
 
 ## 项目结构
-```
 ```
 network-automation/
 ├── network_device.py              # 设备连接与操作类（核心封装）
@@ -36,7 +34,6 @@ network-automation/
 └── README.md                      # 项目说明
 ```
 ```
-
 ## 运行环境
 
 - Python 3.8+
