@@ -23,3 +23,6 @@ report_*/
 
 # 测试相关
 tests/__pycache__/
+
+# 日志文件夹
+logs/

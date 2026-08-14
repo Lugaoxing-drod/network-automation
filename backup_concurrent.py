@@ -4,7 +4,9 @@ from openpyxl import load_workbook
 import datetime
 import os
 import time
+from logger_config import setup_logger
 
+logger = setup_logger(__name__)
 
 def read_devices(excel_file):
     """从 Excel 读取设备列表（和原来一样）"""
@@ -35,13 +37,13 @@ def backup_single_device(dev_info, folder, now):
             success = device.backup(folder, now)
             device.disconnect()
             if success:
-                print(f"[✓] {ip} 备份成功")
+                logger.info(f"[✓] {ip} 备份成功")
             else:
-                print(f"[✗] {ip} 备份失败")
+                logger.error(f"[✗] {ip} 备份失败")
         else:
-            print(f"[✗] {ip} 连接失败")
+            logger.error(f"[✗] {ip} 连接失败")
     except Exception as e:
-        print(f"[✗] {ip} 异常: {e}")
+        logger.error(f"[✗] {ip} 异常: {e}")
 
   
 def main():
@@ -51,8 +53,8 @@ def main():
     folder = f"backup_{today}"
     os.makedirs(folder, exist_ok=True)
     
-    print(f">>>开始并发备份，共 {len(devices)} 台设备")
-    print(f">>>同时连接数: 5（max_workers=5）")
+    logger.info(f">>>开始并发备份，共 {len(devices)} 台设备")
+    logger.info(f">>>同时连接数: 5（max_workers=5）")
     start_time = time.time()
     
     # ==================== 核心代码：线程池 ====================
@@ -64,8 +66,8 @@ def main():
     # =======================================================
     
     end_time = time.time()
-    print(f"\n>>>全部完成！总耗时: {end_time - start_time:.2f} 秒")
-    print(f">>>备份保存在: {folder}")
+    logger.info(f"\n>>>全部完成！总耗时: {end_time - start_time:.2f} 秒")
+    logger.info(f">>>备份保存在: {folder}")
 
 
 if __name__ == "__main__":

@@ -9,7 +9,9 @@ from openpyxl import load_workbook
 from network_device import NetworkDevice
 import datetime
 import os
+from logger_config import setup_logger
 
+logger = setup_logger(__name__)
 
 def read_devices(excel_file):
     wb = load_workbook(excel_file)
@@ -40,7 +42,7 @@ def read_devices(excel_file):
 #     业务函数：创建 VLAN
 #     """
 #     if not device.is_connected():
-#         print(f"    ✗ {device.host} 未连接")
+#         logger.error(f"    ✗ {device.host} 未连接")
 #         return False
     
 #     commands = [
@@ -49,10 +51,10 @@ def read_devices(excel_file):
 #     ]
 #     try:
 #         device.send_config(commands)
-#         print(f"    ✓ {device.host} VLAN {vlan_id} 创建成功")
+#         logger.info(f"    ✓ {device.host} VLAN {vlan_id} 创建成功")
 #         return True
 #     except Exception as e:
-#         print(f"    ✗ {device.host} VLAN {vlan_id} 创建失败: {e}")
+#         logger.error(f"    ✗ {device.host} VLAN {vlan_id} 创建失败: {e}")
 #         return False
 
 
@@ -69,10 +71,10 @@ def read_devices(excel_file):
 #     ]
 #     try:
 #         device.send_config(commands)
-#         print(f"    ✓ {device.host} 接口 {interface} IP 配置成功")
+#         logger.info(f"    ✓ {device.host} 接口 {interface} IP 配置成功")
 #         return True
 #     except Exception as e:
-#         print(f"    ✗ {device.host} 接口配置失败: {e}")
+#         logger.error(f"    ✗ {device.host} 接口配置失败: {e}")
 #         return False
  
 
@@ -96,33 +98,33 @@ def safe_push_config(device: NetworkDevice, commands: list, description: str = "
     TODO: 第7课会加入"验证失败则回滚"的完整闭环
     """
     if not device.is_connected():
-        print(f"    ✗ {device.host} 未连接，跳过")
+        logger.warning(f"    ✗ {device.host} 未连接，跳过")
         return False
     
-    print(f"    >>> 准备下发: {description}")
+    logger.info(f"    >>> 准备下发: {description}")
     
     # 1. 先备份当前配置（安全机制）
     try:
         backup_config = device.send_command("display current-configuration")
-        print(f"    ✓ 配置已备份（内存中）")
+        logger.info(f"    ✓ 配置已备份（内存中）")
     except Exception as e:
-        print(f"    ⚠ 备份失败: {e}，跳过下发")
+        logger.error(f"    ⚠ 备份失败: {e}，跳过下发")
         return False
     
     # 2. 下发新配置
     try:
         output = device.send_config(commands)
-        print(f"    ✓ 配置下发成功")
+        logger.info(f"    ✓ 配置下发成功")
     except Exception as e:
-        print(f"    ✗ 配置下发失败: {e}")
+        logger.error(f"    ✗ 配置下发失败: {e}")
         return False
     
     # 3. 保存配置
     try:
         device.connection.save_config()
-        print(f"    ✓ 配置已保存")
+        logger.info(f"    ✓ 配置已保存")
     except Exception as e:
-        print(f"    ⚠ 保存失败: {e}")
+        logger.error(f"    ⚠ 保存失败: {e}")
         return False
     
     return True
@@ -149,15 +151,15 @@ def push_ip_from_template(device: NetworkDevice, template_file: str, variables: 
 def main():
     devices = read_devices("devices.xlsx")
     
-    print(f">>> 开始配置下发，共 {len(devices)} 台设备\n")
+    logger.info(f">>> 开始配置下发，共 {len(devices)} 台设备\n")
     
     for dev_info in devices:
         ip = dev_info['host']
-        print(f">>> 正在连接 {ip} ...")
+        logger.info(f">>> 正在连接 {ip} ...")
         
         device = NetworkDevice(dev_info)
         if not device.connect():
-            print(f"    ✗ {ip} 连接失败，跳过\n")
+            logger.error(f"    ✗ {ip} 连接失败，跳过\n")
             continue
         
         # ========== 下发 VLAN（使用模板）==========
@@ -177,9 +179,9 @@ def main():
         push_ip_from_template(device, 'templates/interface_ip.j2', ip_vars)
         
         device.disconnect()
-        print(f">>> {ip} 处理完成\n")
+        logger.info(f">>> {ip} 处理完成\n")
     
-    print(">>> 全部设备配置下发完成")
+    logger.info(">>> 全部设备配置下发完成")
 
 
 if __name__ == "__main__":

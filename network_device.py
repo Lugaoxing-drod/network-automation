@@ -3,7 +3,10 @@ from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationExc
 import datetime
 import os
 import re
+from logger_config import setup_logger
 
+# 创建模块级 logger
+logger = setup_logger(__name__)
 
 class NetworkDevice:
     """
@@ -36,13 +39,13 @@ class NetworkDevice:
             )
             return True
         except NetmikoTimeoutException:
-            print(f"    连接超时: {self.host}")
+            logger.error(f"连接超时: {self.host}")
             return False
         except NetmikoAuthenticationException:
-            print(f"    认证失败: {self.host}")
+            logger.error(f"认证失败: {self.host}")
             return False
         except Exception as e:
-            print(f"    其他错误: {e}")
+            logger.error(f"其他错误: {e}")
             return False
     
     def disconnect(self):
@@ -62,7 +65,7 @@ class NetworkDevice:
         try:
             return self.connection.send_command(command)
         except Exception as e:
-            print(f"    ✗ 命令执行失败: {e}")
+            logger.error(f"命令执行失败: {e}")
             return ""
 
     def send_config(self, commands: list) -> str:
@@ -72,7 +75,7 @@ class NetworkDevice:
             output = self.connection.send_config_set(commands)
             return output
         except Exception as e:
-            print(f"    ✗ 配置下发失败: {e}")
+            logger.error(f"配置下发失败: {e}")
             return ""
     
     def backup(self, folder: str, timestamp: str) -> bool:
@@ -83,7 +86,7 @@ class NetworkDevice:
         返回值: True 成功, False 失败
         """
         if not self.is_connected():
-            print(f"    未连接，跳过备份: {self.host}")
+            logger.warning(f"未连接，跳过备份: {self.host}")
             return False
         
         try:
@@ -99,11 +102,11 @@ class NetworkDevice:
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(config)
             
-            print(f"    备份成功 -> {filename}")
+            logger.info(f"备份成功 -> {filename}")
             return True
             
         except Exception as e:
-            print(f"    备份失败: {e}")
+            logger.error(f"备份失败: {e}")
             return False
     
     def inspect(self) -> dict:
@@ -137,10 +140,10 @@ class NetworkDevice:
             result['intf_down'] = self._parse_interface(intf_out)
             
             result['status'] = '成功'
-            print(f"    CPU: {result['cpu']} | 内存: {result['memory']} | 接口异常: {result['intf_down']}")
+            logger.info(f"    CPU: {result['cpu']} | 内存: {result['memory']} | 接口异常: {result['intf_down']}")
             
         except Exception as e:
-            print(f"    巡检出错: {e}")
+            logger.error(f"    巡检出错: {e}")
         
         return result
     

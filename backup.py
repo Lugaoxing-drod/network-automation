@@ -2,7 +2,9 @@ import datetime
 import os
 from openpyxl import load_workbook
 from network_device import NetworkDevice  # 从类文件导入
+from logger_config import setup_logger
 
+logger = setup_logger(__name__)
 
 def read_devices(excel_file):
     """从 Excel 读取设备列表"""
@@ -29,8 +31,8 @@ now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 folder = f"backup_{today}"
 os.makedirs(folder, exist_ok=True)
 
-print(f">>> 开始备份，共 {len(devices)} 台设备")
-print(f">>> 保存到文件夹: {folder}")
+logger.info(f">>> 开始备份，共 {len(devices)} 台设备")
+logger.info(f">>> 保存到文件夹: {folder}")
 
 for dev_info in devices:
     # 创建设备对象
@@ -41,4 +43,4 @@ for dev_info in devices:
         device.backup(folder, now)
         device.disconnect()
 
-print("\n>>> 备份全部完成！")
+logger.info("\n>>> 备份全部完成！")

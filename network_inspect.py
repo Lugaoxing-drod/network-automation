@@ -2,7 +2,9 @@ import datetime
 import os
 from openpyxl import load_workbook, Workbook
 from network_device import NetworkDevice
+from logger_config import setup_logger
 
+logger = setup_logger(__name__)
 
 def read_devices(excel_file):
     wb = load_workbook(excel_file)
@@ -36,8 +38,8 @@ ws.title = "巡检结果"
 headers = ['设备IP', '设备类型', '连接状态', 'CPU使用率', '内存使用率', '接口异常数', '巡检时间']
 ws.append(headers)
 
-print(f">>> 开始巡检，共 {len(devices)} 台设备")
-print(f">>> 报告将保存到: {report_file}")
+logger.info(f">>> 开始巡检，共 {len(devices)} 台设备")
+logger.info(f">>> 报告将保存到: {report_file}")
 
 for dev_info in devices:
     device = NetworkDevice(dev_info)
@@ -61,4 +63,4 @@ for dev_info in devices:
     ])
 
 wb.save(report_file)
-print(f"\n>>> 巡检完成！报告已保存: {report_file}")
+logger.info(f"\n>>> 巡检完成！报告已保存: {report_file}")

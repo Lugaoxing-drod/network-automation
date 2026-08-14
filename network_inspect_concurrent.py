@@ -3,7 +3,9 @@ from network_device import NetworkDevice
 from openpyxl import load_workbook, Workbook
 import datetime
 import os
+from logger_config import setup_logger
 
+logger = setup_logger(__name__)
 
 def read_devices(excel_file):
     """从 Excel 读取设备列表"""
@@ -43,7 +45,7 @@ def inspect_single_device(dev_info):
             result = device.inspect()
             device.disconnect()
     except Exception as e:
-        print(f"[✗] {ip} 巡检异常: {e}")
+        logger.error(f"[✗] {ip} 巡检异常: {e}")
     
     return result
 
@@ -67,9 +69,9 @@ def main():
     headers = ['设备IP', '设备类型', '连接状态', 'CPU使用率', '内存使用率', '接口异常数', '巡检时间']
     ws.append(headers)
     
-    print(f">>> 开始并发巡检，共 {len(devices)} 台设备")
-    print(f">>> 报告将保存到: {report_file}")
-    print(f">>> max_workers=5，报告实时生成中...\n")
+    logger.info(f">>> 开始并发巡检，共 {len(devices)} 台设备")
+    logger.info(f">>> 报告将保存到: {report_file}")
+    logger.info(f">>> max_workers=5，报告实时生成中...\n")
     
     with ThreadPoolExecutor(max_workers=5) as executor:
         future_to_ip = {
@@ -93,13 +95,13 @@ def main():
                     now,
                 ])
                 
-                print(f"[✓] {ip} 完成 | CPU:{result['cpu']} | 内存:{result['memory']} | 接口异常:{result['intf_down']}")
+                logger.info(f"[✓] {ip} 完成 | CPU:{result['cpu']} | 内存:{result['memory']} | 接口异常:{result['intf_down']}")
                 
             except Exception as e:
-                print(f"[✗] {ip} 处理结果时出错: {e}")
+                logger.error(f"[✗] {ip} 处理结果时出错: {e}")
     
     wb.save(report_file)
-    print(f"\n>>> 巡检完成！报告已保存: {report_file}")
+    logger.info(f"\n>>> 巡检完成！报告已保存: {report_file}")
 
 
 if __name__ == "__main__":
