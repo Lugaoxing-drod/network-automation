@@ -35,6 +35,47 @@ def read_devices(excel_file):
     return devices
 
 
+# def create_vlan(device: NetworkDevice, vlan_id: int, vlan_name: str) -> bool:
+#     """
+#     业务函数：创建 VLAN
+#     """
+#     if not device.is_connected():
+#         print(f"    ✗ {device.host} 未连接")
+#         return False
+    
+#     commands = [
+#         f'vlan {vlan_id}',
+#         f'name {vlan_name}',
+#     ]
+#     try:
+#         device.send_config(commands)
+#         print(f"    ✓ {device.host} VLAN {vlan_id} 创建成功")
+#         return True
+#     except Exception as e:
+#         print(f"    ✗ {device.host} VLAN {vlan_id} 创建失败: {e}")
+#         return False
+
+
+# def config_interface_ip(device: NetworkDevice, interface: str, ip: str, mask: str) -> bool:
+#     """
+#     业务函数：配置接口 IP
+#     """
+#     if not device.is_connected():
+#         return False
+    
+#     commands = [
+#         f'interface {interface}',
+#         f'ip address {ip} {mask}',
+#     ]
+#     try:
+#         device.send_config(commands)
+#         print(f"    ✓ {device.host} 接口 {interface} IP 配置成功")
+#         return True
+#     except Exception as e:
+#         print(f"    ✗ {device.host} 接口配置失败: {e}")
+#         return False
+ 
+
 def render_template(template_file: str, variables: dict) -> list:
     """
     读取 Jinja2 模板，渲染变量，返回命令列表
@@ -47,47 +88,6 @@ def render_template(template_file: str, variables: dict) -> list:
     # 把渲染后的文本转成命令列表（去掉空行）
     commands = [line.strip() for line in config_text.split('\n') if line.strip()]
     return commands
-
-
-def create_vlan(device: NetworkDevice, vlan_id: int, vlan_name: str) -> bool:
-    """
-    业务函数：创建 VLAN
-    """
-    if not device.is_connected():
-        print(f"    ✗ {device.host} 未连接")
-        return False
-    
-    commands = [
-        f'vlan {vlan_id}',
-        f'name {vlan_name}',
-    ]
-    try:
-        device.send_config(commands)
-        print(f"    ✓ {device.host} VLAN {vlan_id} 创建成功")
-        return True
-    except Exception as e:
-        print(f"    ✗ {device.host} VLAN {vlan_id} 创建失败: {e}")
-        return False
-
-
-def config_interface_ip(device: NetworkDevice, interface: str, ip: str, mask: str) -> bool:
-    """
-    业务函数：配置接口 IP
-    """
-    if not device.is_connected():
-        return False
-    
-    commands = [
-        f'interface {interface}',
-        f'ip address {ip} {mask}',
-    ]
-    try:
-        device.send_config(commands)
-        print(f"    ✓ {device.host} 接口 {interface} IP 配置成功")
-        return True
-    except Exception as e:
-        print(f"    ✗ {device.host} 接口配置失败: {e}")
-        return False
 
 
 def safe_push_config(device: NetworkDevice, commands: list, description: str = "") -> bool:
@@ -184,3 +184,21 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# main()
+#   │
+#   ├── push_vlan_from_template(device, template_file, variables)
+#   │       │
+#   │       ├── render_template('templates/vlan_config.j2', vlan_vars)  ← 生成命令
+#   │       │       └── 读取.j2文件 → Jinja2渲染 → 返回['vlan 10', 'name VLAN10', ...]
+#   │       │
+#   │       └── safe_push_config(device, commands, desc)  ← 下发命令
+#   │               ├── device.send_command("display current-configuration")  ← 备份
+#   │               ├── device.send_config(commands)  ← 下发（你封装的方法）
+#   │               └── device.connection.save_config()  ← 保存（Netmiko原生）
+#   │
+#   └── push_ip_from_template(device, template_file, variables)
+#           │
+#           ├── render_template('templates/interface_ip.j2', ip_vars)
+#           └── safe_push_config(device, commands, desc)
