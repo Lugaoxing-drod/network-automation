@@ -12,14 +12,14 @@ import os
 
 
 def read_devices(excel_file):
-    """
-    从 Excel 读取设备列表（含模板变量）
-    Excel 列：device_type, host, username, password, vlan_id, vlan_name, interface, ip_address, subnet_mask
-    """
     wb = load_workbook(excel_file)
     sheet = wb.active
     devices = []
     for row in sheet.iter_rows(min_row=2, values_only=True):
+        # 跳过空行（device_type 或 host 为空的行）
+        if not row or not row[0] or not row[1]:
+            continue
+        
         device_type, host, username, password, vlan_id, vlan_name, interface, ip_address, subnet_mask = row
         devices.append({
             'device_type': device_type,
