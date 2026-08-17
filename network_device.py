@@ -19,10 +19,15 @@ class NetworkDevice:
         构造函数：创建对象时自动执行
         device_dict: 从 Excel 读出来的一行设备信息
         """
-        self.device_type = device_dict['device_type']
-        self.host = device_dict['host']
-        self.username = device_dict['username']
-        self.password = device_dict['password']
+        # 【改动】原：self.device_type = device_dict['device_type'] 等直接赋值
+        #   问题：devices.xlsx 里 host 列带尾随空格（如 '192.168.100.10 '），
+        #        netmiko 拿带空格的 host 去连接会失败；username 表头也带空格。
+        #   新：统一 .strip() 去掉首尾空白。集中在这一处改，所有脚本都受益，
+        #       不用每个 read_devices 各改一遍。
+        self.device_type = device_dict['device_type'].strip()
+        self.host = device_dict['host'].strip()
+        self.username = device_dict['username'].strip()
+        self.password = device_dict['password'].strip()
         self.connection = None  # 初始未连接
     
     def connect(self) -> bool:
@@ -118,13 +123,19 @@ class NetworkDevice:
             return False
         
         try:
-            # 根据设备类型选择命令
-            if self.device_type == 'huawei':
-                command = "display current-configuration"
-            else:
-                command = "show running-config"
+            # 【改动】原：if self.device_type == 'huawei': command = "display current-configuration"
+            #                       else: command = "show running-config"
+            #   问题：else 分支（huawei_telnet）发的是思科命令 show running-config，
+            #        华为设备根本不认识，直接报错 → 8 台交换机备份全失败。
+            #   新：华为系列（huawei SSH / huawei_telnet）统一 display current-configuration。
+            command = "display current-configuration"
             
-            config = self.connection.send_command(command)
+            # 【改动】原：config = self.connection.send_command(command)
+            #   问题：send_command 默认 auto_find_prompt=True 会先重读提示符，受登录时
+            #        screen-length 0 temporary 残留的 "Info: ..." 影响，可能读到空 →
+            #        备份文件是空的，等于没备份。
+            #   新：send_command_timing 原样读完整输出，备份内容可靠。
+            config = self.connection.send_command_timing(command, read_timeout=60)
             
             filename = f"{folder}/backup_{self.host}_{timestamp}.txt"
             with open(filename, "w", encoding="utf-8") as f:

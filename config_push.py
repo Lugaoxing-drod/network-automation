@@ -22,7 +22,11 @@ def read_devices(excel_file):
         if not row or not row[0] or not row[1]:
             continue
         
-        device_type, host, username, password, vlan_id, vlan_name, interface, ip_address, subnet_mask = row
+        # 【改动】原：device_type, host, username, password, vlan_id, vlan_name, interface, ip_address, subnet_mask = row
+        #   问题：固定解包 9 列，Excel 一旦增删列就抛 ValueError
+        #        （备份/巡检脚本之前已改成 row[:4] 切片兼容扩展列，此处漏改）。
+        #   新：row[:9] 切片解包，只取前 9 列，兼容扩展列。
+        device_type, host, username, password, vlan_id, vlan_name, interface, ip_address, subnet_mask = row[:9]
         devices.append({
             'device_type': device_type,
             'host': host,
@@ -104,9 +108,19 @@ def safe_push_config(device: NetworkDevice, commands: list, description: str = "
     logger.info(f"    >>> 准备下发: {description}")
     
     # 1. 先备份当前配置（安全机制）
+    # 【改动】原：backup_config = device.send_command("display current-configuration")
+    #             logger.info(f"    ✓ 配置已备份（内存中）")
+    #   问题：配置只读到变量 backup_config，既没写文件、后面也没用，等于"假备份"；
+    #        真出问题想回滚时无文件可用，日志却报"已备份"，误导。
+    #   新：调 device.backup(folder, timestamp) 把当前配置真正落盘到文件。
     try:
-        backup_config = device.send_command("display current-configuration")
-        logger.info(f"    ✓ 配置已备份（内存中）")
+        backup_folder = f"backup_{datetime.datetime.now().strftime('%Y%m%d')}"
+        os.makedirs(backup_folder, exist_ok=True)
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        if not device.backup(backup_folder, timestamp):
+            logger.error(f"    ⚠ 备份失败，跳过下发")
+            return False
+        logger.info(f"    ✓ 配置已备份")
     except Exception as e:
         logger.error(f"    ⚠ 备份失败: {e}，跳过下发")
         return False

@@ -56,16 +56,11 @@ def read_topology(excel_file):
 
 
 def render_template(template_file, variables):
-    #variables：形参字典
     with open(template_file, 'r', encoding='utf-8') as f:
         template = Template(f.read())
     config_text = template.render(**variables)
     commands = [line.strip() for line in config_text.split('\n')
                 if line.strip() and not line.strip().startswith('#')]
-            # 1. `config_text.split('\n')`：把大字符串按换行切割，得到每一行的列表；
-            # 2. `line.strip()`：去掉每行前后空格；
-            # 3. `if line.strip()`：过滤掉空行，空字符串直接丢弃；
-            # 4. `and not line.strip().startswith('#')`：过滤以`#`开头的注释行。
     return commands
 
 
@@ -76,8 +71,18 @@ def safe_push_config(device, commands, description=""):
     
     logger.info(f"    >>> 准备下发: {description}")
     
+    # 【改动】原：backup = device.send_command("display current-configuration")
+    #             logger.info(f"    ✓ 配置已备份")
+    #   问题：配置只读到变量 backup，没写文件、后面也没用，等于"假备份"；
+    #        真出问题想回滚时无文件可用，日志却报"已备份"，误导。
+    #   新：调 device.backup(folder, timestamp) 把当前配置真正落盘到文件。
     try:
-        backup = device.send_command("display current-configuration")
+        backup_folder = f"backup_{datetime.datetime.now().strftime('%Y%m%d')}"
+        os.makedirs(backup_folder, exist_ok=True)
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        if not device.backup(backup_folder, timestamp):
+            logger.error(f"    ⚠ 备份失败，跳过下发")
+            return False
         logger.info(f"    ✓ 配置已备份")
     except Exception as e:
         logger.error(f"    ⚠ 备份失败: {e}")
@@ -264,7 +269,7 @@ def main():
     
     folder = f"report_{datetime.datetime.now().strftime('%Y%m%d')}"
     os.makedirs(folder, exist_ok=True)
-    #exist_ok=True：没有就建，有就拉倒，绝不报错
+    
     results = []
     role_map = {
         'core': config_core,
