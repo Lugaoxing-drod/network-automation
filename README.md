@@ -46,7 +46,7 @@ network-automation/
 └── README.md                      # 项目说明
 ```
 
-## 第5课企业网设备台账
+## 企业网设备台账
 
 `new_topology.xlsx` 内容如下：
 
