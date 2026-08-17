@@ -1,0 +1,36 @@
+# Access 接入交换机配置 (S3700)
+# 接口：Ethernet0/0/1~22(百兆) + GE0/0/1~2(千兆)
+
+vlan {{ vlan_id }}
+
+interface {{ uplink }}
+ description Uplink_Agg
+ port link-type trunk
+ port trunk allow-pass vlan {{ vlan_id }} 1
+
+interface Ethernet0/0/1
+ description {{ dept }}_PC1
+ port link-type access
+ port default vlan {{ vlan_id }}
+ stp edged-port enable
+
+interface Ethernet0/0/2
+ description {{ dept }}_PC2
+ port link-type access
+ port default vlan {{ vlan_id }}
+ stp edged-port enable
+
+interface Ethernet0/0/1
+ port-security enable
+ port-security max-mac-num 2
+ port-security protect-action restrict
+
+interface Ethernet0/0/2
+ port-security enable
+ port-security max-mac-num 2
+ port-security protect-action restrict
+
+interface Vlanif 1
+ ip address {{ mgmt_ip }} 255.255.255.0
+
+ip route-static 0.0.0.0 0.0.0.0 {{ gateway }}

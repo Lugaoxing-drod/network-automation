@@ -1,0 +1,19 @@
+# Server-SW (Srv-SW) 配置 (S3700)
+
+vlan 100
+
+interface {{ uplink }}
+ description Uplink_Core
+ port link-type trunk
+ port trunk allow-pass vlan 100 1
+
+interface {{ interface }}
+ description Server_Port
+ port link-type access
+ port default vlan 100
+ stp edged-port enable
+
+interface Vlanif 1
+ ip address {{ mgmt_ip }} 255.255.255.0
+
+ip route-static 0.0.0.0 0.0.0.0 {{ gateway }}

@@ -1,0 +1,23 @@
+# Agg 汇聚交换机配置 (S5700)
+# 职责：VLAN透传 + STP + 管理IP + 默认路由
+
+vlan batch {{ vlan_list }}
+
+interface {{ uplink }}
+ description Uplink_Core
+ port link-type trunk
+ port trunk allow-pass vlan {{ vlan_list }} 1
+
+{% for downlink in downlinks %}
+interface {{ downlink.interface }}
+ description Downlink_{{ downlink.dept }}
+ port link-type trunk
+ port trunk allow-pass vlan {{ downlink.vlan }} 1
+{% endfor %}
+
+interface Vlanif 1
+ ip address {{ mgmt_ip }} 255.255.255.0
+
+ip route-static 0.0.0.0 0.0.0.0 {{ gateway }}
+
+stp mode rstp

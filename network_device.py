@@ -37,6 +37,11 @@ class NetworkDevice:
                 username=self.username,
                 password=self.password,
             )
+            # 【改动】关闭命令回显校验：telnet 下华为设备对含中文的 description 命令
+            #   回显会换行，netmiko 默认的逐条回显校验(cmd_verify=True)匹配不到 →
+            #   报 "Pattern not detected"。设 False 后全局跳过回显校验，
+            #   send_command / send_config_set / save_config 一并生效。
+            self.connection.global_cmd_verify = False
             return True
         except NetmikoTimeoutException:
             logger.error(f"连接超时: {self.host}")
@@ -72,11 +77,34 @@ class NetworkDevice:
         if not self.is_connected():
             return ""
         try:
-            output = self.connection.send_config_set(commands)
+            # 【改动】原：output = self.connection.send_config_set(commands)
+            #   问题：send_config_set 是"先把全部命令一次性写完、再末尾一次性读回显"，
+            #        遇到 eNSP 上极慢的 interface Vlanif 命令（实测单条 150s+，期间
+            #        设备静默无输出），读到 2 秒静默就提前返回 → 报
+            #        "read_channel_timing's absolute timer expired"。
+            #   新：逐条 send_command，每条都等提示符（read_timeout=300s 够慢命令跑完），
+            #       且 cmd_verify=False 跳过回显校验，中文 description 也不会报
+            #        "Pattern not detected"。
+            output = "" 
+            if not self.connection.check_config_mode():
+                output += self.connection.config_mode()
+                # - `check_config_mode()`：检查当前是否已经处于**系统配置视图**。
+                # - 如果不在配置视图，调用`config_mode()`输入`system‑view`进入配置模式。
+            for cmd in commands:
+                # 【改动】加 auto_find_prompt=False：
+                #   原：send_command 默认 auto_find_prompt=True，会先 find_prompt()（发回车重新读提示符），
+                #       SSH 上会把上一条命令回显误读成提示符（实测读到 'descriptio'）→ 报
+                #       "Pattern not detected"。设 False 后用稳定的 base_prompt（主机名）匹配子视图提示符。
+                output += self.connection.send_command(
+                    cmd, read_timeout=300, cmd_verify=False, auto_find_prompt=False
+                )
+            output += self.connection.exit_config_mode()
             return output
         except Exception as e:
             logger.error(f"配置下发失败: {e}")
-            return ""
+            # 【改动】原：return ""  ← 吞掉异常，上层 safe_push_config 会误判"下发成功"
+            #   新：重新抛出，让上层正确捕获并报告失败
+            raise
     
     def backup(self, folder: str, timestamp: str) -> bool:
         """

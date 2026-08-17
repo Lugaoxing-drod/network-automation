@@ -1,0 +1,21 @@
+# AR1 出口路由器配置
+
+interface {{ interface_ge0 }}
+ description Downlink_Core
+ ip address {{ ip_ge0 }} {{ mask_ge0 }}
+
+interface {{ interface_ge1 }}
+ description Uplink_Cloud
+ ip address {{ ip_ge1 }} {{ mask_ge1 }}
+ nat outbound 2000
+ traffic-filter inbound acl 3001
+
+ip route-static 192.168.0.0 255.255.0.0 {{ core_ip }}
+ip route-static 0.0.0.0 0.0.0.0 {{ next_hop }}
+
+acl number 2000
+ rule permit source 192.168.0.0 0.0.255.255
+
+acl number 3001
+ rule deny ip destination 192.168.30.0 0.0.0.255
+ rule permit ip

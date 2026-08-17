@@ -1,0 +1,51 @@
+# Core-SW 核心交换机配置 (S5700)
+# 职责：全量VLANIF网关 + STP根桥 + ACL + 下联Trunk
+# 上联通过手工阶段Vlanif999已配置，脚本不重复配置
+
+vlan batch 10 20 30 40 100
+
+interface Vlanif 10
+ description YanFa_Gateway
+ ip address 192.168.10.254 255.255.255.0
+
+interface Vlanif 20
+ description ShiChang_Gateway
+ ip address 192.168.20.254 255.255.255.0
+
+interface Vlanif 30
+ description CaiWu_Gateway
+ ip address 192.168.30.254 255.255.255.0
+
+interface Vlanif 40
+ description XingZheng_Gateway
+ ip address 192.168.40.254 255.255.255.0
+
+interface Vlanif 100
+ description Server_Gateway
+ ip address 192.168.200.254 255.255.255.0
+
+interface Vlanif 1
+ description Mgmt_Gateway
+ ip address {{ mgmt_ip }} 255.255.255.0
+
+{% for trunk in downlink_trunks %}
+interface {{ trunk.interface }}
+ description {{ trunk.description }}
+ port link-type trunk
+ port trunk allow-pass vlan 10 20 30 40 100 1
+{% endfor %}
+
+ip route-static 0.0.0.0 0.0.0.0 {{ uplink_ip }}
+
+stp mode rstp
+stp root primary
+
+acl number 3000
+ rule deny ip source 192.168.30.0 0.0.0.255 destination 192.168.10.0 0.0.0.255
+ rule deny ip source 192.168.30.0 0.0.0.255 destination 192.168.20.0 0.0.0.255
+ rule permit ip source 192.168.30.0 0.0.0.255 destination 192.168.200.0 0.0.0.255
+ rule permit ip source 192.168.30.0 0.0.0.255 destination 192.168.40.0 0.0.0.255
+ rule permit ip source 192.168.30.0 0.0.0.255
+
+interface Vlanif 30
+ traffic-filter inbound acl 3000
