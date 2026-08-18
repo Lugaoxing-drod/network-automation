@@ -72,6 +72,8 @@ def main():
 
     today = datetime.datetime.now().strftime("%Y%m%d")
     now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    # 【改动】记下本次运行起始时刻，末尾统计只算"本次"，不会被 24h 内其他运行累计进来
+    run_start = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     folder = f"report_{today}"
     os.makedirs(folder, exist_ok=True)
     report_file = f"{folder}/巡检报告_{now}.xlsx"
@@ -108,7 +110,10 @@ def main():
 
     # 新增：打印数据库统计
     from database import get_operation_summary
-    stats = get_operation_summary(days=0)
+    # 【改动】原：stats = get_operation_summary(days=0)
+    #   问题：days=0 时 since=now 只统计到最后一秒；days=1 又会把 24h 内多次运行累计进来。
+    #   新：传 run_start（本次运行起始时刻）给 since，只统计"本次"的操作。
+    stats = get_operation_summary(since=run_start)
     logger.info(f">>> 本次统计: 总计{stats['total']}次操作, 成功{stats['success']}次, 成功率{stats['success_rate']}%")
 
 

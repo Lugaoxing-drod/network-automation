@@ -352,16 +352,24 @@ def get_devices_never_backed_up(days: int = 7) -> List[str]:
     return [row[0] for row in rows]
 
 
-def get_operation_summary(days: int = 7) -> Dict:
+def get_operation_summary(days: int = 7, since: str = None) -> Dict:
     """
-    最近N天操作汇总统计
+    操作汇总统计
+    :param days: 最近N天（since 为空时生效）
+    :param since: 可选，起始时间戳（'%Y-%m-%d %H:%M:%S'），传了就从该时间点起算，忽略 days
     返回: {'total': 100, 'success': 95, 'failed': 5, 'success_rate': 95.0}
     """
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    since = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+    # 【改动】原：since = (now - timedelta(days=days)) 固定按 days 算
+    #   问题：days=0 时 since=now 只匹配到最后一秒；days=1 又会把 24h 内多次运行累计进来。
+    #   新：支持传 since 起始时间，用于"只统计本次运行"（脚本开头记 run_start 传进来）。
+    if since is None:
+        since = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
 
-    c.execute("SELECT COUNT(*) FROM operations WHERE created_at >= ?", (since,))
+    # 【改动】原：total 统计所有操作（含 started），failed = total - success 把 started 误当失败
+    #   新：只统计有最终结果的操作（success/failed），排除 started，失败数、成功率才准确。
+    c.execute("SELECT COUNT(*) FROM operations WHERE created_at >= ? AND status IN ('success','failed')", (since,))
     total = c.fetchone()[0]
 
     c.execute("SELECT COUNT(*) FROM operations WHERE created_at >= ? AND status = 'success'", (since,))

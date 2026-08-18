@@ -84,10 +84,14 @@ def main():
     init_db()
 
     # 第2步：迁移基础设备台账（devices.xlsx）
-    try:
-        migrate_from_excel("devices.xlsx", sheet_type="basic")
-    except FileNotFoundError:
-        logger.warning("devices.xlsx 不存在，跳过基础台账迁移")
+    # 【改动】原：migrate_from_excel("devices.xlsx", sheet_type="basic")
+    #   问题：devices.xlsx 是第1-4课的 3 台老设备（192.168.100.10/11/12），
+    #        当前 eNSP 拓扑里已不存在，迁进去后备份/巡检会对它们连接超时。
+    #   新：只迁移 new_topology.xlsx 的 9 台设备，不再迁基础台账。
+    # try:
+    #     migrate_from_excel("devices.xlsx", sheet_type="basic")
+    # except FileNotFoundError:
+    #     logger.warning("devices.xlsx 不存在，跳过基础台账迁移")
 
     # 第3步：迁移企业网拓扑台账（new_topology.xlsx）
     # 注意：如果两台Excel有重复IP，add_device会跳过（因为host有UNIQUE约束）
