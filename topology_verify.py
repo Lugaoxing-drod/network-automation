@@ -97,7 +97,11 @@ def main():
     results = []
     with ThreadPoolExecutor(max_workers=5) as executor:
         future_to_ip = {executor.submit(verify_device, d): d['host'] for d in devices}
-        
+#       future_to_ip = {}
+#       for d in devices:
+#       # d就是read_devices解析出来的单台设备字典(dev_info)
+#       future = executor.submit(verify_device, d)   # ✅提交校验任务，子线程跑verify_device(d)
+#       future_to_ip[future] = d['host']             # key:future对象，value:设备IP
         for future in as_completed(future_to_ip):
             ip = future_to_ip[future]
             try:

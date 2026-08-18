@@ -61,6 +61,7 @@ def render_template(template_file, variables):
     config_text = template.render(**variables)
     commands = [line.strip() for line in config_text.split('\n')
                 if line.strip() and not line.strip().startswith('#')]
+                #去首尾空白、过滤空行、过滤`#`注释行
     return commands
 
 
@@ -81,6 +82,14 @@ def safe_push_config(device, commands, description=""):
         os.makedirs(backup_folder, exist_ok=True)
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         if not device.backup(backup_folder, timestamp):
+        # 先执行备份
+        # backup_result = device.backup(backup_folder, timestamp)
+        # #判断备份结果
+        # if backup_result == False:
+        #     logger.error(f"    ⚠ 备份失败，跳过下发")
+        #     return False
+        # 备份成功走到这里
+        # logger.info(f"    ✓ 配置已备份")
             logger.error(f"    ⚠ 备份失败，跳过下发")
             return False
         logger.info(f"    ✓ 配置已备份")
@@ -217,7 +226,7 @@ def config_router(device_info):
     ip = device_info['host']
     logger.info(f">>> [出口] 连接 {ip} ...")
     
-    device = NetworkDevice(device_info)
+    device = NetworkDevice(device_info) 
     if not device.connect():
         return {'host': ip, 'role': 'router', 'status': '失败'}
     
@@ -263,13 +272,13 @@ def main():
     for role in ['router', 'core', 'agg', 'server', 'access']:
         for d in devices_dict.get(role, []):
             tasks.append((role, d))
-    
+    #找到对应设备，添加到tasks列表
     logger.info(f">>> 企业级全网配置下发开始，共 {len(tasks)} 台设备")
     logger.info(f">>> 出口:{len(devices_dict['router'])} 核心:{len(devices_dict['core'])} 汇聚:{len(devices_dict['agg'])} 接入:{len(devices_dict['access'])} 服务器:{len(devices_dict['server'])}")
     
     folder = f"report_{datetime.datetime.now().strftime('%Y%m%d')}"
     os.makedirs(folder, exist_ok=True)
-    
+    #`exist_ok=True` 参数：**如果文件夹已经存在，不会抛出报错，直接静默跳过**。
     results = []
     role_map = {
         'core': config_core,
@@ -277,21 +286,26 @@ def main():
         'access': config_access,
         'router': config_router,
         'server': config_server
+        #分别使用对应的函数
     }
-    
+
     # 【改动】原：with ThreadPoolExecutor(max_workers=5) as executor:
     #   问题：5 台并发同时向 eNSP 灌配置，抢资源导致 interface Vlanif 更慢（更容易超时）。
     #   新：改为 1，串行下发，减轻 eNSP 压力，慢命令更容易跑完。
     with ThreadPoolExecutor(max_workers=1) as executor:
         future_to_ip = {}
         for role, dev in tasks:
+        #这里的dev就是上面的d，tasks.append((role, d))，d对应的就是devices_dict里的role角色对应的设备
             future = executor.submit(role_map[role], dev)
+            #真正跑函数的
             future_to_ip[future] = (dev['host'], dev.get('dept', ''))
-        
+            # 把这个**future 对象直接作为字典的 key**。
+            # value 存元组：(IP,部门)。
         for future in as_completed(future_to_ip):
             ip, dept = future_to_ip[future]
             try:
                 result = future.result()
+                #submit 提交任务的时候，就已经查完 role_map，确定要执行哪个函数了。future 对象内部已经绑定好要跑哪个函数、参数 dev。**
                 results.append(result)
                 icon = "✓" if result['status'] == '成功' else "✗"
                 logger.info(f"[{icon}] {ip} ({result['role']}) 配置{result['status']}")

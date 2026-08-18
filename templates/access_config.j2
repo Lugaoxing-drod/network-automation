@@ -26,7 +26,9 @@ interface Ethernet0/0/2
 interface Ethernet0/0/1
  port-security enable
  port-security max-mac-num 2
+ #该接口最多允许学习**2 个 MAC 地址**。限制接口最多接 2 台设备，防止私接小交换机扩展网口。
  port-security protect-action restrict
+#违规动作。超过最大 MAC 数量，**丢弃非法报文，设备产生告警日志，接口不会 shutdown**。
 
 interface Ethernet0/0/2
  port-security enable
