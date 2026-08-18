@@ -149,7 +149,7 @@ python network_inspect_v2.py
 
 巡检报告保存在 `report_YYYYMMDD/` 文件夹。
 
-### 4. 数据库查询（第6课新增）
+### 4. 数据库查询
 
 ```bash
 # 查看操作审计、失败统计、巡检历史等
