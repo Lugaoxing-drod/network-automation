@@ -26,3 +26,7 @@ tests/__pycache__/
 
 # 日志文件夹
 logs/
+
+echo "*.db" >> .gitignore
+echo "backup_*/" >> .gitignore
+echo "report_*/" >> .gitignore

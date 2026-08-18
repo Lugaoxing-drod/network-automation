@@ -1,16 +1,18 @@
 # 网络自动化项目 (Network Automation)
 
-基于 Netmiko 的企业级网络设备自动化管理工具。
+基于 Netmiko + SQLite 的企业级网络设备自动化管理工具。
 
 ## 功能特性
 
 - **批量备份设备配置**（串行 + 并发）
 - **自动巡检**（CPU / 内存 / 接口状态，串行 + 并发，实时生成 Excel 报表）
 - **配置下发**（基于 Jinja2 模板，支持 VLAN、接口 IP 等差异化配置）
-- **企业级全网拓扑自动化**（第5课新增：9 设备全网配置下发 + 验证）
+- **企业级全网拓扑自动化**（第5课：9 设备全网配置下发 + 验证）
+- **SQLite 设备台账与操作审计**（第6课：替代 Excel，记录"谁、什么时候、改了什么"）
 - **并发执行**：使用 ThreadPoolExecutor，支持同时连接多台设备
 - **模板化配置**：修改 `.j2` 模板文件即可调整配置，无需修改 Python 代码
-- **Excel 驱动设备清单**：修改表格不用改代码
+- **Excel 驱动设备清单**：修改表格不用改代码（第5课及之前）
+- **SQLite 数据库驱动**：设备台账数据库化，支持复杂查询与历史审计（第6课）
 - **文件自动归档**：备份与报告按日期分文件夹存放，避免覆盖
 - **安全下发框架**：配置下发前自动备份当前配置
 - **分级日志系统**：DEBUG/INFO/WARNING/ERROR 同时输出到屏幕和文件
@@ -20,17 +22,23 @@
 ```
 network-automation/
 ├── network_device.py              # 设备连接与操作类（核心封装）
+├── database.py                    # SQLite 数据库操作模块（第6课核心）
 ├── backup.py                      # 串行备份脚本
 ├── backup_concurrent.py           # 并发备份脚本（多线程）
+├── backup_v2.py                   # 并发备份脚本（SQLite驱动 + 操作审计）
 ├── network_inspect.py             # 串行巡检脚本
 ├── network_inspect_concurrent.py  # 并发巡检脚本（实时生成报表）
+├── network_inspect_v2.py          # 并发巡检脚本（SQLite驱动 + 指标入库）
 ├── config_push.py                 # 配置下发脚本（Jinja2 模板 + 安全框架）
 ├── topology_push.py               # 企业级全网配置下发（9设备）
 ├── topology_verify.py             # 全网连通性验证脚本
+├── migrate_to_sqlite.py           # Excel → SQLite 数据迁移脚本（一次性）
+├── db_query.py                    # 数据库查询演示工具
 ├── new_topology.xlsx              # 9设备企业网台账
 ├── devices.xlsx                   # 基础设备台账（第1-4课）
 ├── requirements.txt               # Python 依赖清单
 ├── logger_config.py               # 全局日志配置
+├── network.db                     # SQLite 数据库文件（运行迁移后生成）
 ├── templates/                     # Jinja2 配置模板
 │   ├── vlan_config.j2
 │   ├── interface_ip.j2
@@ -93,6 +101,7 @@ network-automation/
 
 - Python 3.8+
 - 依赖库：`netmiko`, `openpyxl`, `Jinja2`
+- **SQLite 为 Python 内置模块，无需额外安装**
 
 ```bash
 pip install -r requirements.txt
@@ -100,18 +109,27 @@ pip install -r requirements.txt
 
 ## 快速开始
 
-### 1. 配置设备清单
+### 1. 初始化 SQLite 数据库（第6课新增）
 
-编辑 `devices.xlsx` 或 `new_topology.xlsx`，填入设备信息。
+```bash
+# 将 Excel 设备台账迁移到 SQLite（只需执行一次）
+python migrate_to_sqlite.py
+
+# 验证迁移成功
+python -c "from database import get_all_devices; print(len(get_all_devices()), '台设备已入库')"
+```
 
 ### 2. 执行备份
 
 ```bash
-# 串行备份
+# 串行备份（Excel驱动，旧版）
 python backup.py
 
-# 并发备份
+# 并发备份（Excel驱动，旧版）
 python backup_concurrent.py
+
+# 并发备份（SQLite驱动 + 操作审计，第6课推荐）
+python backup_v2.py
 ```
 
 备份文件保存在 `backup_YYYYMMDD/` 文件夹。
@@ -122,19 +140,29 @@ python backup_concurrent.py
 # 串行巡检
 python network_inspect.py
 
-# 并发巡检
+# 并发巡检（Excel驱动，旧版）
 python network_inspect_concurrent.py
+
+# 并发巡检（SQLite驱动 + 指标入库，第6课推荐）
+python network_inspect_v2.py
 ```
 
 巡检报告保存在 `report_YYYYMMDD/` 文件夹。
 
-### 4. 配置下发（基础版）
+### 4. 数据库查询（第6课新增）
+
+```bash
+# 查看操作审计、失败统计、巡检历史等
+python db_query.py
+```
+
+### 5. 配置下发（基础版）
 
 ```bash
 python config_push.py
 ```
 
-### 5. 企业级全网配置下发
+### 6. 企业级全网配置下发
 
 ```bash
 # 前提：eNSP 已搭建 9 设备拓扑，手工基础配置已完成
@@ -145,7 +173,7 @@ python topology_push.py
 - 串行下发避免 eNSP 并发崩溃
 - 自动生成 Excel 配置报告到 `report_YYYYMMDD/`
 
-### 6. 全网验证
+### 7. 全网验证
 
 ```bash
 python topology_verify.py
@@ -154,11 +182,37 @@ python topology_verify.py
 - 并发验证 9 台设备连通性
 - 检查 VLAN、路由、ACL 配置状态
 
-### 7. 测试模板渲染（不连设备）
+### 8. 测试模板渲染（不连设备）
 
 ```bash
 cd tests
 python test_render_only.py
+```
+
+## 数据库设计（第6课）
+
+项目使用 SQLite 嵌入式数据库，包含 4 张核心表：
+
+| 表名 | 用途 | 关键能力 |
+|---|---|---|
+| `devices` | 设备台账 | 替代 Excel，支持按角色筛选 |
+| `operations` | 操作审计 | 记录"谁、什么时候、做了什么、成功还是失败" |
+| `backups` | 备份记录 | 备份文件路径与大小，快速定位 |
+| `inspections` | 巡检记录 | CPU/内存/接口指标历史，支持趋势分析 |
+
+### 核心查询示例
+
+```python
+from database import get_failure_stats, get_devices_never_backed_up, get_operation_summary
+
+# 最近7天失败次数Top设备
+fails = get_failure_stats(days=7)
+
+# 从未备份过的设备（运维死角）
+never = get_devices_never_backed_up(days=7)
+
+# 操作成功率统计
+stats = get_operation_summary(days=7)
 ```
 
 ## 技术栈
@@ -166,12 +220,20 @@ python test_render_only.py
 - **Netmiko**：SSH/Telnet 连接网络设备
 - **OpenPyXL**：读写 Excel 文件
 - **Jinja2**：配置模板渲染
+- **SQLite**：嵌入式数据库，设备台账与操作审计
 - **concurrent.futures**：Python 原生线程并发库
 - **logging**：分级日志系统
 - **Git**：版本控制
 
 ## 更新日志
 
+- **v1.6 (2026-08-18)**：SQLite 数据库与操作审计
+  - 新增 `database.py` 数据库操作模块（4张表：devices/operations/backups/inspections）
+  - 新增 `migrate_to_sqlite.py` Excel 数据迁移脚本
+  - 新增 `backup_v2.py` SQLite 驱动备份脚本（操作审计 + 备份记录入库）
+  - 新增 `network_inspect_v2.py` SQLite 驱动巡检脚本（指标入库）
+  - 新增 `db_query.py` 数据库查询演示工具
+  - 设备台账从 Excel 迁移至 SQLite，支持复杂查询与历史审计
 - **v1.5 (2026-08-16)**：企业级全网自动化拓扑
   - 新增 9 设备企业网拓扑（1路由+2汇聚+4接入+1服务器区+1核心）
   - 新增 `topology_push.py` 全网配置下发（Jinja2模板+安全框架+串行执行）
