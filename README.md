@@ -109,7 +109,7 @@ pip install -r requirements.txt
 
 ## 快速开始
 
-### 1. 初始化 SQLite 数据库（第6课新增）
+### 1. 初始化 SQLite 数据库
 
 ```bash
 # 将 Excel 设备台账迁移到 SQLite（只需执行一次）
@@ -189,7 +189,7 @@ cd tests
 python test_render_only.py
 ```
 
-## 数据库设计（第6课）
+## 数据库设计
 
 项目使用 SQLite 嵌入式数据库，包含 4 张核心表：
 
