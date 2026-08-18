@@ -20,6 +20,9 @@ interface Ethernet0/0/2
  port default vlan {{ vlan_id }}
  stp edged-port enable
 
+#`stp edged‑port enable`：**边缘端口**。接 PC 终端，不参与 STP/RSTP 生成树计算；
+#插上电脑接口立刻 UP，不需要生成树收敛等待；**禁止接交换机，接交换机会产生环路风险**。
+
 interface Ethernet0/0/1
  port-security enable
  port-security max-mac-num 2
