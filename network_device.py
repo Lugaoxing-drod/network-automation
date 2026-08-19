@@ -166,18 +166,28 @@ class NetworkDevice:
             return result
         
         try:
+            # 【改动】原：cpu_out = self.connection.send_command("display cpu-usage") 等三条
+            #             直接 send_command（默认 auto_find_prompt=True）
+            #   问题1：send_command 会先 find_prompt() 重读提示符，部分设备（主机名
+            #         Develope/UCM/APP 等）匹配不到提示符 → 报 "Pattern not detected" → 巡检失败。
+            #   问题2：display 命令默认分页，长输出（display interface brief）末尾是
+            #         "---- More ----" 而非提示符，send_command 等提示符永远等不到。
+            #   新：先发 "screen-length 0 temporary" 关分页，再用 send_command_timing
+            #       （原样读完整输出、不依赖提示符匹配，与 backup() 同思路）。
+            self.connection.send_command_timing("screen-length 0 temporary", read_timeout=15)
+
             # 抓 CPU
-            cpu_out = self.connection.send_command("display cpu-usage")
+            cpu_out = self.connection.send_command_timing("display cpu-usage", read_timeout=30)
             result['cpu'] = self._parse_cpu(cpu_out)
-            
+
             # 抓内存
-            mem_out = self.connection.send_command("display memory")
+            mem_out = self.connection.send_command_timing("display memory", read_timeout=30)
             result['memory'] = self._parse_memory(mem_out)
-            
+
             # 抓接口
-            intf_out = self.connection.send_command("display interface brief")
+            intf_out = self.connection.send_command_timing("display interface brief", read_timeout=60)
             result['intf_down'] = self._parse_interface(intf_out)
-            
+
             result['status'] = '成功'
             logger.info(f"    CPU: {result['cpu']} | 内存: {result['memory']} | 接口异常: {result['intf_down']}")
             
