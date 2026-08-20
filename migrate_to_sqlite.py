@@ -32,6 +32,7 @@ def migrate_from_excel(excel_file: str, sheet_type: str = "basic"):
 
         # 跳过表头行（有些Excel第一行是中文表头，第二行才是数据）
         if str(row[0]).strip().lower() in ['device_type', '设备类型']:
+            #.strip().lower()：先去除首尾空白，再全部转小写
             continue
 
         if sheet_type == "topology":

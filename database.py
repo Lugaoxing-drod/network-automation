@@ -2,6 +2,23 @@
 database.py
 SQLite 数据库操作模块（第6课核心产出）
 职责：封装所有数据库操作，让业务脚本只调用、不写SQL
+1. 设备台账表：devices
+2. 操作审计表：operations
+3. 备份记录表：backups
+4. 巡检记录表：inspections
+1	add_device(device)	往 devices 表插一台设备
+2	get_all_devices(role=None)	查 devices 表所有 active 设备
+3	get_device_by_host(host)	按 IP 查 devices 单台
+4	update_device_status(host, status)	改 devices 表状态字段
+5	log_operation(...)	往 operations 表插一条审计
+6	get_recent_operations(days=7, status=None)	查 operations 最近 N 天
+7	get_failure_stats(days=7)	统计 operations 每设备失败次数
+8	get_operation_summary(days=7, since=None)	汇总 operations 成功率
+9	log_backup(host, file_path)	往 backups 表插一条备份记录
+10	get_latest_backup(host)	查 backups 最近一次备份
+11	get_devices_never_backed_up(days=7)	查 backups 里 N 天没备份的设备
+12	log_inspection(...)	往 inspections 表插一条巡检
+13	get_inspection_history(host, limit=10)	查 inspections 最近 N 次巡检
 """
 
 import sqlite3

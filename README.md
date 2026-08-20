@@ -22,7 +22,7 @@
 ```
 network-automation/
 ├── network_device.py              # 设备连接与操作类（核心封装）
-├── database.py                    # SQLite 数据库操作模块（第6课核心）
+├── database.py                    # SQLite 数据库操作模块
 ├── backup.py                      # 串行备份脚本
 ├── backup_concurrent.py           # 并发备份脚本（多线程）
 ├── backup_v2.py                   # 并发备份脚本（SQLite驱动 + 操作审计）
@@ -35,7 +35,7 @@ network-automation/
 ├── migrate_to_sqlite.py           # Excel → SQLite 数据迁移脚本（一次性）
 ├── db_query.py                    # 数据库查询演示工具
 ├── new_topology.xlsx              # 9设备企业网台账
-├── devices.xlsx                   # 基础设备台账（第1-4课）
+├── devices.xlsx                   # 基础设备台账
 ├── requirements.txt               # Python 依赖清单
 ├── logger_config.py               # 全局日志配置
 ├── network.db                     # SQLite 数据库文件（运行迁移后生成）

@@ -5,33 +5,34 @@ topology_verify.py
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from network_device import NetworkDevice
-from openpyxl import load_workbook
+#from openpyxl import load_workbook
+from database import get_all_devices
 from logger_config import setup_logger
 
 logger = setup_logger(__name__)
 
 
-def read_devices(excel_file):
-    wb = load_workbook(excel_file)
-    sheet = wb.active
-    devices = []
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        if not row or not row[0] or not row[1]:
-            continue
-        _, host, username, password, role = row[:5]
-        devices.append({
-            # 【改动】按角色切换连接方式（同 topology_push.py）：
-            #   原：'device_type': device_type,  ← 读 Excel 第1列（全是 'huawei' 即 SSH）
-            #   新：路由器保持 huawei(SSH)，8 台老交换机改 huawei_telnet，
-            #       否则老交换机 SSH 不兼容连不上（和下发脚本同样的坑）。
-            'device_type': 'huawei' if role == 'router' else 'huawei_telnet',
-            'host': host,
-            'username': username,
-            'password': password,
-            'role': role,
-        })
-    wb.close()
-    return devices
+# def read_devices(excel_file):
+#     wb = load_workbook(excel_file)
+#     sheet = wb.active
+#     devices = []
+#     for row in sheet.iter_rows(min_row=2, values_only=True):
+#         if not row or not row[0] or not row[1]:
+#             continue
+#         _, host, username, password, role = row[:5]
+#         devices.append({
+#             # 【改动】按角色切换连接方式（同 topology_push.py）：
+#             #   原：'device_type': device_type,  ← 读 Excel 第1列（全是 'huawei' 即 SSH）
+#             #   新：路由器保持 huawei(SSH)，8 台老交换机改 huawei_telnet，
+#             #       否则老交换机 SSH 不兼容连不上（和下发脚本同样的坑）。
+#             'device_type': 'huawei' if role == 'router' else 'huawei_telnet',
+#             'host': host,
+#             'username': username,
+#             'password': password,
+#             'role': role,
+#         })
+#     wb.close()
+#     return devices
 
 
 def verify_device(dev_info):
@@ -91,7 +92,8 @@ def verify_device(dev_info):
 
 
 def main():
-    devices = read_devices("new_topology.xlsx")
+    #devices = read_devices("new_topology.xlsx")
+    devices = get_all_devices()
     logger.info(f">>> 开始全网验证，共 {len(devices)} 台设备")
     
     results = []

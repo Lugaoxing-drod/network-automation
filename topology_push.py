@@ -4,7 +4,8 @@ topology_push.py
 """
 
 from jinja2 import Template
-from openpyxl import load_workbook
+#from openpyxl import load_workbook
+from database import get_all_devices
 from network_device import NetworkDevice
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import datetime
@@ -14,45 +15,57 @@ from logger_config import setup_logger
 logger = setup_logger(__name__)
 
 
-def read_topology(excel_file):
-    wb = load_workbook(excel_file)
-    sheet = wb.active
+# def read_topology(excel_file):
+#     wb = load_workbook(excel_file)
+#     sheet = wb.active
+#     devices = {'core': [], 'agg': [], 'access': [], 'router': [], 'server': []}
+#     all_devices = []
+    
+#     for row in sheet.iter_rows(min_row=2, values_only=True):
+#         if not row or not row[0] or not row[1]:
+#             continue
+        
+#         device_info = {
+#             # 【改动】按角色切换连接方式：
+#             #   原：'device_type': row[0],   ← 直接读 Excel 第1列（值全是 'huawei'，即 SSH）
+#             #   新：老交换机(S5700/S3700 V200R001) 的 SSH 服务器不兼容现代客户端，
+#             #       认证后主动断开，故 8 台交换机改用 telnet；路由器(AR2220) SSH 正常，保持 huawei。
+#             'device_type': 'huawei' if row[4] == 'router' else 'huawei_telnet',
+#             'host': row[1],
+#             'username': row[2],
+#             'password': row[3],
+#             'role': row[4],
+#             'dept': row[5] if len(row) > 5 else '',
+#             'vlan_id': row[6] if len(row) > 6 else '',
+#             'vlan_name': row[7] if len(row) > 7 else '',
+#             'interface': row[8] if len(row) > 8 else 'Ethernet0/0/1',
+#             'ip_address': row[9] if len(row) > 9 else '',
+#             'subnet_mask': row[10] if len(row) > 10 else '',
+#             'uplink': row[11] if len(row) > 11 else 'GE0/0/1',
+#             'mgmt_ip': row[12] if len(row) > 12 else row[1],
+#             'raw_row': row
+#         }
+        
+#         if device_info['role'] in devices:
+#             devices[device_info['role']].append(device_info)
+#             all_devices.append(device_info)
+#         else:
+#             logger.warning(f"未知角色 {device_info['role']}，跳过 {device_info['host']}")
+    
+#     wb.close()
+#     return devices, all_devices
+
+
+def read_topology():
+    """从 SQLite 读取设备并按角色分组（替代 Excel）"""
     devices = {'core': [], 'agg': [], 'access': [], 'router': [], 'server': []}
-    all_devices = []
-    
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        if not row or not row[0] or not row[1]:
-            continue
-        
-        device_info = {
-            # 【改动】按角色切换连接方式：
-            #   原：'device_type': row[0],   ← 直接读 Excel 第1列（值全是 'huawei'，即 SSH）
-            #   新：老交换机(S5700/S3700 V200R001) 的 SSH 服务器不兼容现代客户端，
-            #       认证后主动断开，故 8 台交换机改用 telnet；路由器(AR2220) SSH 正常，保持 huawei。
-            'device_type': 'huawei' if row[4] == 'router' else 'huawei_telnet',
-            'host': row[1],
-            'username': row[2],
-            'password': row[3],
-            'role': row[4],
-            'dept': row[5] if len(row) > 5 else '',
-            'vlan_id': row[6] if len(row) > 6 else '',
-            'vlan_name': row[7] if len(row) > 7 else '',
-            'interface': row[8] if len(row) > 8 else 'Ethernet0/0/1',
-            'ip_address': row[9] if len(row) > 9 else '',
-            'subnet_mask': row[10] if len(row) > 10 else '',
-            'uplink': row[11] if len(row) > 11 else 'GE0/0/1',
-            'mgmt_ip': row[12] if len(row) > 12 else row[1],
-            'raw_row': row
-        }
-        
-        if device_info['role'] in devices:
-            devices[device_info['role']].append(device_info)
-            all_devices.append(device_info)
+    for dev in get_all_devices():          # 只返回 status='active' 的 9 台
+        role = dev['role']
+        if role in devices:
+            devices[role].append(dev)
         else:
-            logger.warning(f"未知角色 {device_info['role']}，跳过 {device_info['host']}")
-    
-    wb.close()
-    return devices, all_devices
+            logger.warning(f"未知角色 {role}，跳过 {dev['host']}")
+    return devices
 
 
 def render_template(template_file, variables):
@@ -266,8 +279,9 @@ def generate_report(results, folder):
 
 
 def main():
-    devices_dict, all_devices = read_topology("new_topology.xlsx")
-    
+    #devices_dict, all_devices = read_topology("new_topology.xlsx")
+    devices_dict = read_topology()
+
     tasks = []
     for role in ['router', 'core', 'agg', 'server', 'access']:
         for d in devices_dict.get(role, []):
