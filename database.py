@@ -270,10 +270,14 @@ def get_failure_stats(days: int = 7) -> List[Dict]:
     c = conn.cursor()
 
     since = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+    # 【改动】原：WHERE ... AND status = 'failed'
+    #   问题：第7课 safe_pusher 会记 'rollbacked'/'rollback_failed'，它们是"下发失败后回滚"，
+    #        也是失败的一种，但 status='failed' 抓不到，导致这些设备的失败次数被漏算。
+    #   新：把两种回滚状态也计入失败统计，运维看板才能看到"这台设备其实没配成功过"。
     c.execute('''
-        SELECT host, COUNT(*) as fail_count 
-        FROM operations 
-        WHERE created_at >= ? AND status = 'failed'
+        SELECT host, COUNT(*) as fail_count
+        FROM operations
+        WHERE created_at >= ? AND status IN ('failed','rollbacked','rollback_failed')
         GROUP BY host
         HAVING fail_count >= 1
         ORDER BY fail_count DESC
@@ -386,7 +390,11 @@ def get_operation_summary(days: int = 7, since: str = None) -> Dict:
 
     # 【改动】原：total 统计所有操作（含 started），failed = total - success 把 started 误当失败
     #   新：只统计有最终结果的操作（success/failed），排除 started，失败数、成功率才准确。
-    c.execute("SELECT COUNT(*) FROM operations WHERE created_at >= ? AND status IN ('success','failed')", (since,))
+    # 【改动】原：status IN ('success','failed')
+    #   问题：第7课 safe_pusher 会记 'rollbacked'/'rollback_failed' 两种状态，不在
+    #        'success'/'failed' 里，导致回滚的操作在统计里完全隐身，成功率被虚高。
+    #   新：把两种回滚状态也计入 total，failed = total - success 自然把回滚归入失败。
+    c.execute("SELECT COUNT(*) FROM operations WHERE created_at >= ? AND status IN ('success','failed','rollbacked','rollback_failed')", (since,))
     total = c.fetchone()[0]
 
     c.execute("SELECT COUNT(*) FROM operations WHERE created_at >= ? AND status = 'success'", (since,))
