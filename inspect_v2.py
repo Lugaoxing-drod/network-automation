@@ -1,5 +1,5 @@
 """
-network_inspect_v2.py
+inspect_v2.py
 第6课产物：改造后的并发巡检脚本
 核心变化：
   1. 从 SQLite 读取设备

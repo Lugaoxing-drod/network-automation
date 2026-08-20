@@ -26,9 +26,9 @@ network-automation/
 ├── backup.py                      # 串行备份脚本
 ├── backup_concurrent.py           # 并发备份脚本（多线程）
 ├── backup_v2.py                   # 并发备份脚本（SQLite驱动 + 操作审计）
-├── network_inspect.py             # 串行巡检脚本
-├── network_inspect_concurrent.py  # 并发巡检脚本（实时生成报表）
-├── network_inspect_v2.py          # 并发巡检脚本（SQLite驱动 + 指标入库）
+├── inspect.py                     # 串行巡检脚本
+├── inspect_concurrent.py          # 并发巡检脚本（实时生成报表）
+├── inspect_v2.py                  # 并发巡检脚本（SQLite驱动 + 指标入库）
 ├── config_push.py                 # 配置下发脚本（Jinja2 模板 + 安全框架）
 ├── topology_push.py               # 企业级全网配置下发（9设备）
 ├── topology_verify.py             # 全网连通性验证脚本
@@ -138,13 +138,13 @@ python backup_v2.py
 
 ```bash
 # 串行巡检
-python network_inspect.py
+python inspect.py
 
 # 并发巡检（Excel驱动，旧版）
-python network_inspect_concurrent.py
+python inspect_concurrent.py
 
 # 并发巡检（SQLite驱动 + 指标入库，第6课推荐）
-python network_inspect_v2.py
+python inspect_v2.py
 ```
 
 巡检报告保存在 `report_YYYYMMDD/` 文件夹。
@@ -231,7 +231,7 @@ stats = get_operation_summary(days=7)
   - 新增 `database.py` 数据库操作模块（4张表：devices/operations/backups/inspections）
   - 新增 `migrate_to_sqlite.py` Excel 数据迁移脚本
   - 新增 `backup_v2.py` SQLite 驱动备份脚本（操作审计 + 备份记录入库）
-  - 新增 `network_inspect_v2.py` SQLite 驱动巡检脚本（指标入库）
+  - 新增 `inspect_v2.py` SQLite 驱动巡检脚本（指标入库）
   - 新增 `db_query.py` 数据库查询演示工具
   - 设备台账从 Excel 迁移至 SQLite，支持复杂查询与历史审计
 - **v1.5 (2026-08-16)**：企业级全网自动化拓扑

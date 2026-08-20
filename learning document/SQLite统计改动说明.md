@@ -13,7 +13,7 @@
 |------|----------|
 | `database.py` | `get_operation_summary` 新增 `since` 参数；`total` 查询排除 `started` |
 | `backup_v2.py` | 记录 `run_start`，末尾统计传 `since=run_start` |
-| `network_inspect_v2.py` | 同上 |
+| `inspect_v2.py` | 同上 |
 
 ---
 
@@ -89,7 +89,7 @@ def get_operation_summary(days: int = 7, since: str = None) -> Dict:
 
 ---
 
-## 3. network_inspect_v2.py — 同上
+## 3. inspect_v2.py — 同上
 
 与 `backup_v2.py` 完全一致的改动：开头记 `run_start`，末尾传 `since=run_start`。
 
