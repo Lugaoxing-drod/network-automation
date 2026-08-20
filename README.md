@@ -26,7 +26,7 @@ network-automation/
 ├── backup.py                      # 串行备份脚本
 ├── backup_concurrent.py           # 并发备份脚本（多线程）
 ├── backup_v2.py                   # 并发备份脚本（SQLite驱动 + 操作审计）
-├── inspect.py                     # 串行巡检脚本
+├── inspect_run.py                 # 串行巡检脚本
 ├── inspect_concurrent.py          # 并发巡检脚本（实时生成报表）
 ├── inspect_v2.py                  # 并发巡检脚本（SQLite驱动 + 指标入库）
 ├── config_push.py                 # 配置下发脚本（Jinja2 模板 + 安全框架）
@@ -138,7 +138,7 @@ python backup_v2.py
 
 ```bash
 # 串行巡检
-python inspect.py
+python inspect_run.py
 
 # 并发巡检（Excel驱动，旧版）
 python inspect_concurrent.py
